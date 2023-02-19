@@ -1,4 +1,6 @@
 #![feature(default_free_fn)]
+#![feature(let_chains)]
+#![feature(is_some_and)]
 
 use {
 	rand::Rng,
@@ -9,38 +11,128 @@ use {
 		},
 		default::default,
 	},
+	vec1::{
+		vec1,
+		Vec1,
+	},
 };
 
 const MAX_CARDS_SMALL: u8 = 7;
 
-fn main() {}
+fn main()
+{
+	let mut players = vec1! {Player::new("Benjamin"), Player::new("Nick")};
+	let mut shuffled_deck: Cards = shuffle();
 
-type StackOfCards = Vec<Card>;
+	let winner = play_game(&mut players, &mut shuffled_deck);
+	println!("Winner is {winner:?}");
+}
+
+/// Returns the winner of the game.
+fn play_game<'a>(
+	players: &'a mut Players<'a>,
+	shuffled_deck: &mut Cards,
+) -> &'a Player<'a>
+{
+	let round_number = 0u32;
+	while !is_any_player_winning(&players)
+	{
+		println!("Round {round_number}:");
+		for mut player in players.iter_mut()
+		{
+			player_turn(&mut player, shuffled_deck);
+		}
+		println!("");
+	}
+	get_winning_player(players)
+}
+
+fn player_turn(
+	player: &mut Player,
+	deck: &mut Cards,
+)
+{
+	let card = player.draw(deck);
+	if let Some(card) = card
+	{
+		if let Some(stored_card) = player.store(card)
+		&& let StoredCard::PairedCard(_) = stored_card
+		{
+			player.play(&stored_card)
+		}
+	}
+}
+
+fn is_any_player_winning(players: &Players) -> bool
+{
+	players
+		.iter()
+		.map(|player| player.get_score())
+		.max()
+		.is_some_and(|sum| sum >= 20)
+}
+
+fn get_winning_player<'a>(players: &'a Players<'a>) -> &'a Player<'a>
+{
+	let mut winning_player_index_and_score: (usize, u8) = (0, 0);
+	for player_index_and_score in players
+		.iter()
+		.enumerate()
+		.map(|(index, player)| (index, player.get_score()))
+	{
+		if &player_index_and_score.1 > &winning_player_index_and_score.1
+		{
+			winning_player_index_and_score = player_index_and_score;
+		}
+	}
+	&players[winning_player_index_and_score.0]
+}
+
+type Cards = Vec<Card>;
+type Players<'a> = Vec1<Player<'a>>;
 
 impl Player<'_>
 {
-	fn draw(self: &mut Self, sample: &mut StackOfCards) -> Option<Card> { sample.pop() }
+	fn draw(
+		self: &mut Self,
+		sample: &mut Cards,
+	) -> Option<Card>
+	{
+		sample.pop()
+	}
 
-	fn store(self: &mut Self, card: Card)
+	fn store(
+		self: &mut Self,
+		card: Card,
+	) -> Option<StoredCard>
 	{
 		if self.unplayed_cards.remove(&StoredCard::PairedCard(card))
 		{
-			println!("Overstored {card:?}");
+			println!("{} overstored the {card:?} in their hand, losing all three cards.", self.name);
+			None
 		}
 		else if self.unplayed_cards.remove(&StoredCard::UnpairedCard(card))
 		{
-			println!("Paired {card:?}");
-			self.unplayed_cards.insert(StoredCard::PairedCard(card));
+			println!("{} paired up the {card:?} in their hand.", self.name);
+			let rtn = StoredCard::PairedCard(card);
+			self.unplayed_cards.insert(rtn);
+			Some(rtn)
 		}
 		else
 		{
-			println!("Added {card:?}");
-			self.unplayed_cards.insert(StoredCard::UnpairedCard(card));
+			println!("{} added {card:?} to their hand.", self.name);
+			let rtn = StoredCard::UnpairedCard(card);
+			self.unplayed_cards.insert(rtn);
+			Some(rtn)
 		}
 	}
 
-	fn play(self: &mut Self, card: &StoredCard)
+	fn play(
+		self: &mut Self,
+		card: &StoredCard,
+	)
 	{
+		println!("{} played their {card:?}.", self.name);
 		self.unplayed_cards.remove(card);
 		self.played_cards.push(*card)
 	}
@@ -55,10 +147,10 @@ impl Player<'_>
 	}
 }
 
-fn shuffle() -> StackOfCards
+fn shuffle() -> Cards
 {
 	let mut deck: HashMap<Card, u8> = HashMap::new();
-	let mut shuffled: StackOfCards = default();
+	let mut shuffled: Cards = default();
 	for _ in 0..50
 	{
 		loop
@@ -158,7 +250,7 @@ pub mod tests
 			.map(|name| -> Player { Player::new(name) })
 			.collect();
 
-		let mut shuffled_deck: StackOfCards = shuffle();
+		let mut shuffled_deck: Cards = shuffle();
 		shuffled_deck = dbg!(shuffled_deck);
 
 		let player_one = players.get_mut(0).unwrap();

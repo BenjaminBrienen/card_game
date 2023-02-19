@@ -7,6 +7,7 @@ name = "card_game"
 version = "0.1.0"
 dependencies = [
  "rand",
+ "vec1",
 ]
 
 [[package]]
@@ -67,6 +68,12 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
 ]
+
+[[package]]
+name = "vec1"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bda7c41ca331fe9a1c278a9e7ee055f4be7f5eb1c2b72f079b4ff8b5fce9d5c"
 
 [[package]]
 name = "wasi"
