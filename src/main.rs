@@ -1,6 +1,9 @@
 #![feature(default_free_fn)]
 #![feature(let_chains)]
 #![feature(is_some_and)]
+#![warn(clippy::all)]
+#![warn(rustc::all)]
+#![allow(unknown_lints)]
 
 use {
 	crate::{
@@ -36,15 +39,15 @@ fn play_game<'a>(
 ) -> &'a Player<'a>
 {
 	let mut round_number = 0u32;
-	while !is_any_player_winning(&players)
+	while !is_any_player_winning(players)
 	{
-		round_number = round_number + 1;
+		round_number += 1;
 		println!("Round {round_number}:");
-		for mut player in players.iter_mut()
+		for player in players.iter_mut()
 		{
-			player_turn(&mut player, shuffled_deck);
+			player_turn(player, shuffled_deck);
 		}
-		println!("");
+		println!();
 	}
 	get_winning_player(players)
 }
@@ -82,7 +85,7 @@ fn get_winning_player<'a>(players: &'a Players<'a>) -> &'a Player<'a>
 		.enumerate()
 		.map(|(index, player)| (index, player.get_score()))
 	{
-		if &player_index_and_score.1 > &winning_player_index_and_score.1
+		if player_index_and_score.1 > winning_player_index_and_score.1
 		{
 			winning_player_index_and_score = player_index_and_score;
 		}

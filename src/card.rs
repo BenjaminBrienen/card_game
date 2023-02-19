@@ -35,7 +35,7 @@ pub fn shuffle() -> Cards
 			let is_new_ten = new_card == Card::Ten && *chosen_card_count == 0;
 			if is_new_small || is_new_ten
 			{
-				*chosen_card_count = *chosen_card_count + 1u8;
+				*chosen_card_count += 1u8;
 				shuffled.push(new_card);
 				break
 			}
@@ -66,7 +66,7 @@ pub enum StoredCard
 
 impl StoredCard
 {
-	pub fn get_score(self: Self) -> u8
+	pub fn get_score(self) -> u8
 	{
 		match self
 		{

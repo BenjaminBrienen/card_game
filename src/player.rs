@@ -21,7 +21,7 @@ impl<'a> Player<'a>
 	}
 
 	pub fn draw(
-		self: &mut Self,
+		&mut self,
 		sample: &mut Cards,
 	) -> Option<Card>
 	{
@@ -29,7 +29,7 @@ impl<'a> Player<'a>
 	}
 
 	pub fn store(
-		self: &mut Self,
+		&mut self,
 		card: Card,
 	) -> Option<StoredCard>
 	{
@@ -55,7 +55,7 @@ impl<'a> Player<'a>
 	}
 
 	pub fn play(
-		self: &mut Self,
+		&mut self,
 		card: &StoredCard,
 	)
 	{
@@ -64,7 +64,7 @@ impl<'a> Player<'a>
 		self.played_cards.push(*card)
 	}
 
-	pub fn get_score(self: &Self) -> u8
+	pub fn get_score(&self) -> u8
 	{
 		self
 			.played_cards
