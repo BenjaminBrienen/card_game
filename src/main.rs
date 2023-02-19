@@ -3,21 +3,22 @@
 #![feature(is_some_and)]
 
 use {
-	rand::Rng,
-	std::{
-		collections::{
-			HashMap,
-			HashSet,
+	crate::{
+		card::shuffle,
+		player::{
+			Player,
+			Players,
 		},
-		default::default,
 	},
-	vec1::{
-		vec1,
-		Vec1,
+	card::{
+		Cards,
+		StoredCard,
 	},
+	vec1::vec1,
 };
 
-const MAX_CARDS_SMALL: u8 = 7;
+pub mod card;
+pub mod player;
 
 fn main()
 {
@@ -34,9 +35,10 @@ fn play_game<'a>(
 	shuffled_deck: &mut Cards,
 ) -> &'a Player<'a>
 {
-	let round_number = 0u32;
+	let mut round_number = 0u32;
 	while !is_any_player_winning(&players)
 	{
+		round_number = round_number + 1;
 		println!("Round {round_number}:");
 		for mut player in players.iter_mut()
 		{
@@ -88,156 +90,17 @@ fn get_winning_player<'a>(players: &'a Players<'a>) -> &'a Player<'a>
 	&players[winning_player_index_and_score.0]
 }
 
-type Cards = Vec<Card>;
-type Players<'a> = Vec1<Player<'a>>;
-
-impl Player<'_>
-{
-	fn draw(
-		self: &mut Self,
-		sample: &mut Cards,
-	) -> Option<Card>
-	{
-		sample.pop()
-	}
-
-	fn store(
-		self: &mut Self,
-		card: Card,
-	) -> Option<StoredCard>
-	{
-		if self.unplayed_cards.remove(&StoredCard::PairedCard(card))
-		{
-			println!("{} overstored the {card:?} in their hand, losing all three cards.", self.name);
-			None
-		}
-		else if self.unplayed_cards.remove(&StoredCard::UnpairedCard(card))
-		{
-			println!("{} paired up the {card:?} in their hand.", self.name);
-			let rtn = StoredCard::PairedCard(card);
-			self.unplayed_cards.insert(rtn);
-			Some(rtn)
-		}
-		else
-		{
-			println!("{} added {card:?} to their hand.", self.name);
-			let rtn = StoredCard::UnpairedCard(card);
-			self.unplayed_cards.insert(rtn);
-			Some(rtn)
-		}
-	}
-
-	fn play(
-		self: &mut Self,
-		card: &StoredCard,
-	)
-	{
-		println!("{} played their {card:?}.", self.name);
-		self.unplayed_cards.remove(card);
-		self.played_cards.push(*card)
-	}
-
-	fn get_score(self: &Self) -> u8
-	{
-		self
-			.played_cards
-			.iter()
-			.map(|card| -> u8 { card.get_score() })
-			.sum()
-	}
-}
-
-fn shuffle() -> Cards
-{
-	let mut deck: HashMap<Card, u8> = HashMap::new();
-	let mut shuffled: Cards = default();
-	for _ in 0..50
-	{
-		loop
-		{
-			let new_card = match rand::thread_rng().gen_range(0..8)
-			{
-				0 => Card::One,
-				1 => Card::Two,
-				2 => Card::Three,
-				3 => Card::Four,
-				4 => Card::Five,
-				5 => Card::Six,
-				6 => Card::Seven,
-				7 => Card::Ten,
-				_ => unreachable!(),
-			};
-			let chosen_card_count = deck.entry(new_card).or_insert(0);
-			// println!("new_card: {new_card:?}, chosen_card_count: {chosen_card_count}");
-			let is_new_small = new_card != Card::Ten && *chosen_card_count < MAX_CARDS_SMALL;
-			let is_new_ten = new_card == Card::Ten && *chosen_card_count == 0;
-			if is_new_small || is_new_ten
-			{
-				*chosen_card_count = *chosen_card_count + 1u8;
-				shuffled.push(new_card);
-				break
-			}
-		}
-	}
-	shuffled
-}
-
-#[derive(PartialEq, Eq, Clone, Debug)]
-struct Player<'a>
-{
-	unplayed_cards: HashSet<StoredCard>,
-	played_cards:   Vec<StoredCard>,
-	name:           &'a str,
-}
-
-impl<'a> Player<'a>
-{
-	fn new(name: &'a str) -> Self
-	{
-		Player {
-			unplayed_cards: default(),
-			played_cards: default(),
-			name,
-		}
-	}
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone, Debug)]
-enum Card
-{
-	One   = 1,
-	Two   = 2,
-	Three = 3,
-	Four  = 4,
-	Five  = 5,
-	Six   = 6,
-	Seven = 7,
-	Ten   = 10,
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone, Debug)]
-enum StoredCard
-{
-	UnpairedCard(Card),
-	PairedCard(Card),
-}
-
-impl StoredCard
-{
-	fn get_score(self: Self) -> u8
-	{
-		match self
-		{
-			StoredCard::UnpairedCard(card) => card as u8,
-			StoredCard::PairedCard(card) => 2 * card as u8,
-		}
-	}
-}
-
 #[cfg(test)]
 pub mod tests
 {
-	use crate::*;
+	use crate::{
+		card::{
+			shuffle,
+			Cards,
+			StoredCard,
+		},
+		*,
+	};
 
 	#[test]
 	pub fn test_2_players_drawing_storing_playing()
