@@ -185,7 +185,6 @@ fn shuffle() -> Cards
 #[derive(PartialEq, Eq, Clone, Debug)]
 struct Player<'a>
 {
-	is_finished:    bool,
 	unplayed_cards: HashSet<StoredCard>,
 	played_cards:   Vec<StoredCard>,
 	name:           &'a str,
@@ -198,7 +197,6 @@ impl<'a> Player<'a>
 		Player {
 			unplayed_cards: default(),
 			played_cards: default(),
-			is_finished: false,
 			name,
 		}
 	}
